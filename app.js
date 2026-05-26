@@ -17,8 +17,8 @@ let arStarted = false;
 let isMuted = false;
 let modelsVisible = true;
 
-// PINCH TO ZOOM TABAN ÖLÇEKLERİ
-const baseScales = { 'target-0': 4, 'target-1': 4, 'target-2': 0.04, 'target-3': 4 };
+// PINCH TO ZOOM TABAN ÖLÇEKLERİ (HTML Değerleriyle eşitleme düzeltildi)
+const baseScales = { 'target-0': 4, 'target-1': 4, 'target-2': 0.045, 'target-3': 4 };
 let scaleModifiers = { 'target-0': 1, 'target-1': 1, 'target-2': 1, 'target-3': 1 };
 let startDistance = 0;
 
@@ -139,7 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
         model.setAttribute('visible', modelsVisible);
       });
       toggleModelBtn.querySelector('.icon').textContent = modelsVisible ? '👁️' : '🙈';
-      toggleModelBtn.querySelector('.text').textContent = modelsVisible ? 'Gizle' : 'Göster';
+      toggleModelBtn.querySelector('.text').textContent = modelsVisible ? 'Görünüm' : 'Gizle';
     });
   }
 
@@ -195,11 +195,11 @@ document.addEventListener('DOMContentLoaded', () => {
     startDistance = 0;
   });
 
-  // 6. GÜNCELLEME: Kesin ve Engelsiz Çıkış (Kapat butonu işlevi)
+  // 6. KESİN ÇIKIŞ FONKSİYONU
   if (finishBtn) {
     finishBtn.addEventListener('click', (e) => {
       e.preventDefault();
-      e.stopPropagation(); // Tıklamanın A-Frame katmanına takılmasını tamamen engeller
+      e.stopPropagation(); 
       
       stopAudio();
       hideIndicator();
@@ -221,4 +221,17 @@ document.addEventListener('DOMContentLoaded', () => {
       arStarted = false;
     });
   }
+});
+
+// YENİ: EKRAN DÖNÜŞÜ VE BOYUTLANDIRMA DÜZELTMELERİ (En alta eklendi)
+window.addEventListener("resize", () => {
+  const scene = document.getElementById('arScene');
+  if (scene) scene.resize();
+});
+
+window.addEventListener("orientationchange", () => {
+  setTimeout(() => {
+    const scene = document.getElementById('arScene');
+    if (scene) scene.resize();
+  }, 300);
 });
