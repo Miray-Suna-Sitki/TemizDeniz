@@ -2,17 +2,13 @@
  * Hayal Kütüphanesi — app.js (Tam Güncel Sürüm)
  */
 
-// GÜNCELLEME: Tıklamaların 3D uzayda kusursuz yakalanması için A-Frame mimarisine doğrudan kilitlenen özel tıklama-dönme bileşeni
+// Tıklamaların 3D uzayda kusursuz yakalanması için A-Frame mimarisine doğrudan kilitlenen özel tıklama-dönme bileşeni
 if (typeof AFRAME !== 'undefined') {
   AFRAME.registerComponent('click-rotate', {
     init: function () {
       this.el.addEventListener('click', () => {
         let currentRot = this.el.getAttribute('rotation') || {x: 0, y: 0, z: 0};
-        
-        // Önceki animasyon çakışmalarını sıfırla
         this.el.removeAttribute('animation');
-        
-        // Kendi ekseninde takla atma animasyonu başlat
         this.el.setAttribute('animation', {
           property: 'rotation',
           to: `${currentRot.x} ${currentRot.y} ${currentRot.z + 360}`,
@@ -51,10 +47,23 @@ let ambientAudio = new Audio('./audio/ambiyans.mp3');
 ambientAudio.loop = true; 
 ambientAudio.volume = 0.2; 
 
-// PINCH TO ZOOM TABAN ÖLÇEKLERİ (Orijinal target-2 ölçeğiniz 0.04 olarak senkronize bırakıldı)
+// PINCH TO ZOOM TABAN ÖLÇEKLERİ
 const baseScales = { 'target-0': 4, 'target-1': 4, 'target-2': 0.04, 'target-3': 4 };
 let scaleModifiers = { 'target-0': 1, 'target-1': 1, 'target-2': 1, 'target-3': 1 };
 let startDistance = 0;
+
+// GÜNCELLEME: SİTE İLK AÇILDIĞINDA MÜZİĞİ OYNATMAYA ÇALIŞAN, ENGELLENİRSE İLK EKRAN DOKUNUŞUNDA TETİKLEYEN MOTOR
+function startAmbientMusic() {
+  if (!isMuted && ambientAudio.paused) {
+    ambientAudio.play().then(() => {
+      // Müzik başarıyla başladıysa ekrandaki geçici dinleyicileri kaldır (Gereksiz tetiklemeyi önler)
+      document.removeEventListener('click', startAmbientMusic);
+      document.removeEventListener('touchstart', startAmbientMusic);
+    }).catch(err => {
+      console.log("Tarayıcı otoplay engelledi, etkileşim bekleniyor...");
+    });
+  }
+}
 
 function playAudio(src) {
   stopAudio();
@@ -122,8 +131,9 @@ function startMindAR() {
       setTimeout(() => {
         document.getElementById('ar-loader').style.display = 'none';
         document.getElementById('ar-ui').classList.add('active');
-        if (!isMuted) {
-          ambientAudio.play().catch(err => console.log("Müzik otomatik başlatılamadı:", err));
+        // Giriş ekranında zaten başlamış olan müzik AR ekranında da kesintisiz çalmaya devam eder
+        if (!isMuted && ambientAudio.paused) {
+          ambientAudio.play().catch(err => {});
         }
       }, 500);
 
@@ -181,6 +191,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const finishBtn = document.getElementById('finishBtn'); 
   const toggleModelBtn = document.getElementById('toggleModelBtn');
   const toggleAudioBtn = document.getElementById('toggleAudioBtn');
+
+  // GÜNCELLEME: SİTE İLK AÇILDIĞI AN SESTİ TETİKLE (Ve geçici etkileşim dinleyicilerini kur)
+  startAmbientMusic();
+  document.addEventListener('click', startAmbientMusic);
+  document.addEventListener('touchstart', startAmbientMusic);
 
   bookCards.forEach(card => {
     card.addEventListener('mouseenter', (e) => {
@@ -292,6 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
       e.stopPropagation(); 
       
       stopAudio();
+      // Çıkış yapıldığında arka plan fon müziğini kapatıp sıfırlıyoruz
       ambientAudio.pause();
       ambientAudio.currentTime = 0;
 
@@ -307,6 +323,11 @@ document.addEventListener('DOMContentLoaded', () => {
       
       document.getElementById('dashboard').style.display = 'flex';
       
+      // Çıkış yapıp Dashboard'a geri dönüldüğü an müziği giriş sayfası için yeniden başlatıyoruz
+      startAmbientMusic();
+      document.addEventListener('click', startAmbientMusic);
+      document.addEventListener('touchstart', startAmbientMusic);
+
       const scene = document.getElementById('arScene');
       if (scene && scene.systems['mindar-image-system']) {
         scene.systems['mindar-image-system'].stop();
